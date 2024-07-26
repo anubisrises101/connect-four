@@ -17,7 +17,7 @@ const COLORS = {
   
   /*----- event listeners -----*/
   document.getElementById('markers').addEventListener('click', handleDrop);
-  playAgainBtn.addEventListener('click', init)
+  playAgainBtn.addEventListener('click', init);
   
   /*----- functions -----*/
   init();
@@ -45,6 +45,8 @@ const COLORS = {
   function handleDrop(evt) {
     // Get the index of the marker
     const colIdx = markerEls.indexOf(evt.target);
+    //guard against missing a marker
+    if (colIdx === -1) return;
     // Create a "shortcut" variable to the column that needs to be update
     const colArr = board[colIdx];
     // Get index of first available cell (null)
@@ -58,7 +60,26 @@ const COLORS = {
   
   // Return null (no winner), 1/-1 if player wins, 'Tie' if a tie
   function getWinner(colIdx, rowIdx) {
-    return checkVertical(colIdx, rowIdx) // || checkHorizontal()
+    return checkVertical(colIdx, rowIdx) || checkHorizontal(colIdx, rowIdx)
+      || checkForwardSlash(colIdx, rowIdx)// || checkBackSlash(colIdx, rowIdx)
+  }
+
+  function checkBackSlash(colIdx, rowIdx) {
+    const numUpDiag = countAdj(colIdx, rowIdx, -1, 1);
+    const numDownDiag = countAdj(colIdx, rowIdx, 1, -1);
+    return numUpDiag + numDownDiag >= 3 ? turn : null;
+  }
+  
+  function checkForwardSlash(colIdx, rowIdx) {
+    const numUpDiag = countAdj(colIdx, rowIdx, 1, 1);
+    const numDownDiag = countAdj(colIdx, rowIdx, -1, -1);
+    return numUpDiag + numDownDiag >= 3 ? turn : null;
+  }
+  
+  function checkHorizontal(colIdx, rowIdx) {
+    const numLeft = countAdj(colIdx, rowIdx, -1, 0);
+    const numRight = countAdj(colIdx, rowIdx, 1, 0);
+    return numLeft + numRight >= 3 ? turn : null;
   }
   
   function checkVertical(colIdx, rowIdx) {
@@ -73,9 +94,9 @@ const COLORS = {
     // Always use a while loop if you can't tell how many 
     // times we need to loop (iterate)
     while (board[colIdx] && board[colIdx][rowIdx] === turn) {
-        count++;
-        colIdx += colOffset;
-        rowIdx += rowOffset;
+      count++;
+      colIdx += colOffset;
+      rowIdx += rowOffset;
     }
     return count;
   }
@@ -92,6 +113,10 @@ const COLORS = {
     // ternary expression (use to return one of two values/expressions)
     // <conditional expression> ? <truthy exp> : <falsy exp>;
     playAgainBtn.style.visibility = winner ? 'visible' : 'hidden';
+    markerEls.forEach(function(markerEl, colIdx) {
+        const showMarker = board[colIdx].includes(null);
+        markerEl.style.visibility = showMarker && !winner ? 'visible' : 'hidden';
+    });
   }
   
   function renderMessage() {
